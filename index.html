@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DotAI Capsule · .ai 时光胶囊</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%23e7bb41' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23e7bb41'/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#0b0e13;--bg2:#0e1219;--surface:#141922;--surface2:#171e2a;--line:#232b38;
+        --text:#edeef2;--muted:#98a2b3;--gold:#e7bb41;--gold-hi:#f3d27a;--gold-dim:#8a6d24;--radius:16px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:clip}
+  body{background:radial-gradient(1200px 600px at 70% -10%,#16202e 0%,var(--bg) 55%);color:var(--text);
+       font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased;position:relative}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(1px 1px at 12% 22%,rgba(255,255,255,.16),transparent 60%),
+      radial-gradient(1px 1px at 68% 12%,rgba(255,255,255,.12),transparent 60%),
+      radial-gradient(1.5px 1.5px at 84% 34%,rgba(255,255,255,.10),transparent 60%),
+      radial-gradient(1px 1px at 34% 58%,rgba(255,255,255,.08),transparent 60%),
+      radial-gradient(1px 1px at 52% 78%,rgba(255,255,255,.10),transparent 60%),
+      radial-gradient(1px 1px at 92% 66%,rgba(255,255,255,.08),transparent 60%),
+      linear-gradient(rgba(255,255,255,.024) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.024) 1px,transparent 1px);
+    background-size:auto,auto,auto,auto,auto,auto,44px 44px,44px 44px}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px 72px;position:relative;z-index:1}
+  header{display:flex;align-items:center;justify-content:space-between;padding:26px 0 8px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{width:38px;height:38px;border:1.5px solid var(--gold);border-radius:10px;display:grid;place-items:center;
+        color:var(--gold);font-weight:700;font-size:15px;letter-spacing:.5px}
+  .brand b{font-size:19px;letter-spacing:.4px}.brand span{color:var(--muted);font-size:12.5px;display:block;margin-top:1px}
+  .hright{display:flex;align-items:center;gap:10px}
+  .pill{border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 14px;font-size:12.5px;white-space:nowrap}
+  .pill i{color:var(--gold);font-style:normal}
+  .langsw{display:flex;gap:2px;border:1px solid var(--line);border-radius:999px;padding:3px;background:rgba(255,255,255,.02)}
+  .langsw button{background:transparent;color:var(--muted);border:0;padding:5px 13px;font-size:12.5px;border-radius:999px;cursor:pointer;font-weight:600;white-space:nowrap}
+  .langsw button.on{background:linear-gradient(120deg,var(--gold-hi),var(--gold));color:#141414}
+  .hero{padding:56px 0 30px;position:relative;display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center}
+  .hero::before{content:"";position:absolute;top:-70px;left:-140px;width:640px;height:420px;pointer-events:none;
+    background:radial-gradient(closest-side,rgba(231,187,65,.14),rgba(231,187,65,.05) 45%,transparent 72%)}
+  .kicker{color:var(--gold);letter-spacing:3.5px;font-size:12px;text-transform:uppercase;position:relative}
+  h1{font-size:52px;line-height:1.12;margin:16px 0 14px;font-weight:800;position:relative}
+  h1 .thin{font-weight:800;background:linear-gradient(115deg,var(--gold-hi) 5%,var(--gold) 48%,#a87f1c 95%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+  .hero p{color:var(--muted);font-size:16.5px;line-height:1.75;position:relative}
+  .stats{display:flex;gap:14px;margin:30px 0 8px;flex-wrap:wrap;position:relative}
+  .stat{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.016));
+    border:1px solid var(--line);border-radius:var(--radius);padding:16px 22px;min-width:170px;
+    box-shadow:0 12px 30px -18px rgba(0,0,0,.75);backdrop-filter:blur(6px)}
+  .stat b{font-size:26px;display:block;background:linear-gradient(115deg,var(--gold-hi),var(--gold) 55%,#b98a1e);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+  .stat span{color:var(--muted);font-size:13px}
+  h2{font-size:21px;margin:44px 0 6px} .sub{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.016));
+        border:1px solid var(--line);border-radius:var(--radius);padding:20px;position:relative;min-height:138px;
+        box-shadow:0 12px 30px -18px rgba(0,0,0,.75);backdrop-filter:blur(6px);
+        transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+  .card:hover{transform:translateY(-4px);border-color:rgba(231,187,65,.55);
+        box-shadow:0 20px 42px -18px rgba(231,187,65,.30)}
+  .seq{position:absolute;top:14px;right:16px;color:var(--muted);font-size:12px;letter-spacing:1px}
+  .seal{width:38px;height:38px;border-radius:50%;margin-bottom:4px;position:relative;flex:none;
+        display:flex;align-items:center;justify-content:center;background:#10151f;
+        font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;
+        box-shadow:0 6px 14px -8px rgba(0,0,0,.7)}
+  .seal::before{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;
+        border:1.5px solid var(--sc,#8a6d24);
+        box-shadow:inset 0 0 0 3px #0b0e13,inset 0 0 0 4.5px rgba(255,255,255,.10)}
+  .seal .lt{position:relative;z-index:1}
+  .seal.t-common{color:var(--sc)}
+  .seal.t-rare::before{border:1.5px solid transparent;
+        background:linear-gradient(#10151f,#10151f) padding-box,linear-gradient(135deg,var(--g1),var(--g2)) border-box;
+        box-shadow:inset 0 0 0 3px rgba(11,14,19,.55)}
+  .seal.t-rare .lt{background:linear-gradient(120deg,var(--g1),var(--g2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .seal.t-epic::before{border:1.5px solid transparent;
+        background:linear-gradient(#10151f,#10151f) padding-box,linear-gradient(135deg,var(--g1),var(--g2) 52%,var(--g3)) border-box;
+        box-shadow:inset 0 0 0 3px rgba(11,14,19,.55),0 0 14px -2px var(--g2)}
+  .seal.t-epic .lt{color:#f3d27a;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .seal.t-legend::before{border:0;box-shadow:none;
+        background:conic-gradient(from 0deg,#e7bb41,#d87fa0,#a68bd8,#7fa8c9,#6fb3a6,#a9b86b,#e7bb41);
+        -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));
+        mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));
+        animation:sealspin 7s linear infinite}
+  @keyframes sealspin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){.seal.t-legend::before{animation:none}}
+  .seal.t-legend .lt{color:#fff;-webkit-text-stroke:.4px rgba(0,0,0,.35);text-shadow:0 0 7px rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.65)}
+  .legend-tag{position:absolute;right:14px;bottom:12px;font-size:9.5px;letter-spacing:1.6px;font-weight:700;
+        color:#eef0f6;border:1px solid rgba(255,255,255,.38);background:rgba(255,255,255,.07);
+        padding:2.5px 8px;border-radius:999px}
+  .name{font-size:21px;font-weight:700;margin:8px 0 8px;word-break:break-all}
+  .name .ai{color:var(--gold)}
+  .msg{color:var(--muted);font-size:13.5px;line-height:1.65;overflow-wrap:anywhere}
+  .tag{display:inline-block;margin-top:12px;font-size:11px;color:var(--muted);border:1px solid var(--line);
+       border-radius:999px;padding:3px 9px}
+  .tag.kind{color:var(--gold-hi);border-color:var(--gold-dim)}
+  .panel{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.016));
+    border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-top:14px;
+    box-shadow:0 12px 30px -18px rgba(0,0,0,.75);backdrop-filter:blur(6px)}
+  .panel h3{font-size:16.5px;margin-bottom:6px}.panel p{color:var(--muted);font-size:13.5px;line-height:1.7}
+  .row{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;align-items:center}
+  input[type=text],textarea{flex:1;min-width:260px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;
+       color:var(--text);padding:13px 16px;font-size:14.5px;outline:none;font-family:inherit}
+  textarea{min-height:74px;resize:vertical;line-height:1.6}
+  input[type=text]:focus,textarea:focus{border-color:var(--gold-dim)}
+  button.act{background:linear-gradient(120deg,var(--gold-hi),var(--gold));color:#141414;border:0;border-radius:12px;padding:13px 24px;font-size:14.5px;
+       font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:13px 24px;font-size:14.5px;font-weight:500;cursor:pointer}
+  button.act[disabled],button.ghost[disabled]{opacity:.45;cursor:not-allowed}
+  .kindsw{display:flex;gap:8px;flex-wrap:wrap}
+  .kindsw button{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:999px;
+       padding:9px 18px;font-size:13.5px;cursor:pointer;font-weight:600}
+  .kindsw button.on{background:linear-gradient(120deg,var(--gold-hi),var(--gold));color:#141414;border-color:var(--gold)}
+  .note{font-size:12px;color:var(--muted);margin-top:12px}
+  .hashfp{font-family:Consolas,Menlo,monospace;font-size:12.5px;color:var(--gold-hi);word-break:break-all}
+  canvas{width:100%;max-width:1200px;height:auto;min-width:0;border-radius:12px;border:1px solid var(--line)}
+
+  /* ==== enrichment + responsive (2026-11-19) ==== */
+  h4{font-size:16px;margin-bottom:8px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .stepnum{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gold);color:var(--gold);
+    display:grid;place-items:center;font-weight:800;font-size:14px;margin-bottom:12px}
+  .steps p,.twocol p{color:var(--muted);font-size:13.5px;line-height:1.7}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .trust{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .tpoint{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.016));border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px 18px}
+  .tpoint b{display:block;font-size:14.5px;margin-bottom:5px;color:var(--gold-hi)}
+  .tpoint span{color:var(--muted);font-size:13px;line-height:1.6}
+  .tierstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .tiercard{text-align:center;display:flex;flex-direction:column;align-items:center}
+  .tiercard .seal{width:64px;height:64px;font-size:30px;margin:6px 0 10px}
+  .tiername{font-weight:700;font-size:15px}
+  .banner{margin-top:52px;border:1px solid var(--gold-dim);border-radius:20px;text-align:center;padding:38px 24px;
+    background:radial-gradient(600px 260px at 50% -30%,rgba(231,187,65,.16),transparent 70%),linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.016))}
+  .b-k{color:var(--gold);letter-spacing:3.5px;font-size:12px;text-transform:uppercase}
+  .b-big{font-size:52px;font-weight:800;margin:12px 0 8px;background:linear-gradient(115deg,var(--gold-hi),var(--gold) 55%,#b98a1e);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+  .b-p{color:var(--muted);font-size:14.5px;line-height:1.7;max-width:640px;margin:0 auto}
+  .faq details{border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:10px;
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.014))}
+  .faq summary{cursor:pointer;font-weight:700;font-size:14.5px}
+  .faq details p{color:var(--muted);font-size:13.5px;line-height:1.75;margin-top:10px}
+  .card.slot{border-style:dashed;background:transparent;box-shadow:none;backdrop-filter:none;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .card.slot:hover{transform:none;border-color:var(--line);box-shadow:none}
+  .slotring{width:38px;height:38px;border-radius:50%;border:1.5px dashed #3a4353;margin-bottom:10px}
+  .slotname{color:var(--muted);font-size:16px;font-weight:700}
+  .hero-visual{position:relative}
+  .samplecard{border:1px solid rgba(231,187,65,.45);border-radius:20px;padding:28px 28px 24px;text-align:center;
+    background:linear-gradient(165deg,#131a26 0%,#0d1119 70%);box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
+  .sc-top{display:flex;justify-content:space-between;align-items:center;color:var(--gold);letter-spacing:3px;font-size:12px;margin-bottom:8px}
+  .sc-top .tag{margin-top:0}
+  #heroSeal{width:250px;max-width:64vw;height:auto;border:0;border-radius:0}
+  .sc-name{font-size:32px;font-weight:800;margin-top:6px}
+  .sc-name .ai{color:var(--gold)}
+  .sc-line{color:var(--text);font-size:13.5px;margin-top:10px}
+  .sc-line.dim{color:var(--muted);font-size:12.5px}
+  /* breakpoint system: >=1600 / 1200 / 1024 / 768 / 560 / 380 */
+  @media (min-width:1600px){.hero{gap:72px}h1{font-size:58px}}
+  @media (min-width:1200px){.grid{grid-template-columns:repeat(4,1fr)}}
+  @media (min-width:1024px) and (max-width:1199px){.grid{grid-template-columns:repeat(3,1fr)}}
+  @media (min-width:768px) and (max-width:1023px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:1023px){.hero{grid-template-columns:1fr;gap:30px}.steps,.tierstrip{grid-template-columns:repeat(2,1fr)}.trust{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:1024px){button.act,button.ghost{min-height:48px}.kindsw button{min-height:40px;padding:10px 18px}
+    .langsw button{min-height:40px;padding:9px 14px}}
+  @media (max-width:767px){.grid{grid-template-columns:1fr}.steps,.twocol,.tierstrip,.trust{grid-template-columns:1fr}.b-big{font-size:36px}
+    .hero{padding:26px 0 10px}.hero-visual{display:none}.stats{flex-wrap:nowrap;margin:18px 0 4px}
+    .stat{flex:1;min-width:0;padding:12px 10px}.stat b{font-size:19px}}
+  @media (max-width:560px){.stat{min-width:0;flex:1 1 150px}.samplecard{padding:22px 18px 20px}
+    #heroSeal{width:210px}.panel{padding:18px}h2{font-size:19px}
+    .brand span{display:none}.kicker{font-size:10.5px;letter-spacing:2px}
+    h1{font-size:34px;margin:12px 0 10px}.hero p{font-size:15px;line-height:1.6}
+    .panel p{font-size:13px;line-height:1.6}#statusBar{margin-top:8px}}
+  @media (max-width:380px){h1{font-size:33px}.b-big{font-size:29px}.sc-name{font-size:25px}
+    .panel{padding:16px}.banner{padding:30px 16px}.stats{display:none}}
+  footer{margin-top:56px;border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font-size:12.5px;line-height:1.9}
+  @media (max-width:600px){header{flex-wrap:wrap;gap:10px}.pill{display:none}input[type=text],textarea{min-width:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><div class="mark">.ai</div>
+      <div><b>DotAI Capsule</b><span data-i18n="brand_sub">.ai 时光胶囊 · 给 2027 留一句话</span></div></div>
+    <div class="hright">
+      <div class="pill" data-i18n="pill">时光胶囊 · <i>TIME CAPSULE</i> · 2027-01-01 开封</div>
+      <div class="langsw"><button id="btn-zh">中文</button><button id="btn-en">EN</button></div>
+    </div>
+  </header>
+  <div id="statusBar" class="note" style="margin-top:14px"></div>
+
+  <section class="hero"><div class="hero-main">
+    <div class="kicker">Sealed on-chain · Opened on New Year’s Eve</div>
+    <h1 data-i18n="h1">给 2027<br><span class="thin">留一句话。</span></h1>
+    <p data-i18n="hero_p">DotAI Capsule 是给 Agent ID 持有人的时光胶囊：写一句话给 2027，前端只把它的哈希封上链——开封前任何人都读不到内容。2027 年 1 月 1 日零点，由你本人回来开封，原文与哈希对上才算数。一人一颗，封存一次，开封一次。</p>
+    <div class="stats">
+      <div class="stat"><b id="statCap">–</b><span data-i18n="stat1">已封存胶囊（目标 30+）</span></div>
+      <div class="stat"><b id="statCount">–</b><span data-i18n="stat2">距跨年夜开封</span></div>
+      <div class="stat"><b>0</b><span data-i18n="stat3">合约碰过的资产（永远是 0）</span></div>
+    </div>
+  </div>
+  <div class="hero-visual"><div class="samplecard">
+    <div class="sc-top"><span>DOTAI CAPSULE</span><span class="tag kind" data-i18n="sample_tag">示例 SAMPLE</span></div>
+    <canvas id="heroSeal" width="300" height="300"></canvas>
+    <div class="sc-name">aurora<span class="ai">.ai</span></div>
+    <div class="sc-line" data-i18n="sample_line">#777 · 给 2027 的信 · 内容已封存 · 开封前无人能读</div>
+    <div class="sc-line dim" data-i18n="sample_fp">内容指纹 0x8f3c…9a21 · 2027-01-01 跨年夜开封</div>
+  </div></div>
+  </section>
+
+  <div class="panel" id="sealPanel">
+    <h3 data-i18n="panel_h">封存我的胶囊</h3>
+    <p data-i18n="panel_p">连接持有 Agent ID 的钱包，前端会自动从官方合约带出你的 .ai 名字并双查验真。写下给 2027 的一句话：它只以哈希上链，开封前谁也看不见——包括我们。</p>
+    <div class="row">
+      <button class="act" id="btnConnect" data-i18n="btn_connect">连接钱包</button>
+      <span id="myName" style="font-weight:700"></span>
+      <span id="myState" style="color:var(--muted);font-size:13px"></span>
+    </div>
+    <div id="sealForm">
+      <div class="row">
+        <div class="kindsw">
+          <button id="kind0" class="on" data-i18n="kind0">给 2027 的信</button>
+          <button id="kind1" data-i18n="kind1">对 Agent 生态的预言</button>
+        </div>
+      </div>
+      <div class="row">
+        <textarea id="msgInput" data-i18n-ph="input_ph" placeholder="写给 2027 的一句话（≤280 字节，中文约 93 字）"></textarea>
+      </div>
+      <div class="note" id="msgBytes" style="margin-top:6px"></div>
+      <div class="row">
+        <button class="act" id="btnSeal" data-i18n="btn_seal">封存上链</button>
+      </div>
+      <div class="note" data-i18n="note">封存只付你自己的 gas；链上只存哈希，不存原文。合约无 owner、无转账、无授权、无收款功能，源码已开源并将在 BscScan 验证。</div>
+    </div>
+    <div id="myCapsule" style="display:none">
+      <div class="row">
+        <span id="myCapInfo" style="font-size:14.5px"></span>
+      </div>
+      <div class="row"><span class="hashfp" id="myCapHash"></span></div>
+      <div class="row">
+        <button class="ghost" id="btnCert" data-i18n="btn_cert">生成我的胶囊证书</button>
+        <button class="ghost" id="btnDownload" data-i18n="btn_download">下载证书 PNG（1200×630）</button>
+      </div>
+      <div class="row"><canvas id="poster" width="1200" height="630"></canvas></div>
+      <div id="revealBox" style="display:none">
+        <div class="row">
+          <textarea id="revealInput" data-i18n-ph="reveal_ph" placeholder="开封时间已到：在这里写下当初那句原文，哈希对上即可开封"></textarea>
+        </div>
+        <div class="row">
+          <button class="act" id="btnReveal" data-i18n="btn_reveal">开封我的胶囊</button>
+        </div>
+      </div>
+      <div class="note" id="myCapNote"></div>
+    </div>
+  </div>
+
+  <h2 data-i18n="how_h2">玩法 · 三步</h2>
+  <div class="sub" data-i18n="how_sub">从写下到开封，一共只需要你出现两次：封存一次，开封一次。</div>
+  <div class="steps">
+    <div class="card"><div class="stepnum">1</div><h4 data-i18n="s1t">写一句话</h4><p data-i18n="s1p">给 2027 的信，或对 Agent 生态的预言，一句话即可（≤280 字节，中文约 93 字）。</p></div>
+    <div class="card"><div class="stepnum">2</div><h4 data-i18n="s2t">哈希封存上链</h4><p data-i18n="s2p">前端只把这句话的哈希发上链，原文不离开你的浏览器；哈希连同你的钱包地址一起计算，别人抄走也开不了。</p></div>
+    <div class="card"><div class="stepnum">3</div><h4 data-i18n="s3t">跨年夜本人开封</h4><p data-i18n="s3p">2027 年 1 月 1 日零点之后，回到这里写下原文：哈希对上，胶囊当场开封；对不上，合约直接拒绝。</p></div>
+  </div>
+
+  <h2 data-i18n="kind_h2">两种胶囊 · 选一种心情</h2>
+  <div class="twocol">
+    <div class="card"><h4 data-i18n="kind0">给 2027 的信</h4><p data-i18n="k0p">写给一年后的自己：一个愿望、一个约定，或一个留给未来的问题。开封夜再读到它，是 2026 的你和 2027 的你打个照面。</p></div>
+    <div class="card"><h4 data-i18n="kind1">对 Agent 生态的预言</h4><p data-i18n="k1p">对 Agent 生态下一个断言：谁会赢、什么会发生。哈希封存、时间作证——到时说对了赖不掉，说错了也改不了。</p></div>
+  </div>
+
+  <h2 data-i18n="trust_h2">为什么可信</h2>
+  <div class="trust">
+    <div class="tpoint"><b data-i18n="t1t">只有哈希上链</b><span data-i18n="t1p">开封前无人能读你的内容——包括我们。</span></div>
+    <div class="tpoint"><b data-i18n="t2t">一人一颗</b><span data-i18n="t2p">合约按地址拦截第二次封存，物理防刷。</span></div>
+    <div class="tpoint"><b data-i18n="t3t">只能本人开封</b><span data-i18n="t3p">原文与哈希对不上，合约直接拒绝。</span></div>
+    <div class="tpoint"><b data-i18n="t4t">合约无 owner</b><span data-i18n="t4p">不碰资产、没有任何管理权力，源码开源可查。</span></div>
+  </div>
+
+  <h2 data-i18n="tier_h2">封印图鉴 · 你的章由名字决定</h2>
+  <div class="sub" data-i18n="tier_sub">印章的档位与颜色由你的 .ai 名字哈希决定，公式公开、任何人可复算：普通 68% / 稀有 22% / 史诗 8% / 传说 2%。以下为样式样例，名字为演示用。</div>
+  <div class="tierstrip" id="tierStrip"></div>
+
+  <h2 data-i18n="gal_h2">胶囊陈列 · The Capsules</h2>
+  <div class="sub" data-i18n="gal_sub">每一颗都已上链封存：名字、封印与日期公开，内容在开封前保持密封。以下为链上实时数据。</div>
+  <div class="grid" id="capGrid"></div>
+  <div class="note" id="capEmpty"></div>
+
+  <div class="banner">
+    <div class="b-k" data-i18n="banner_k">开封夜 · Opening Night</div>
+    <div class="b-big" id="bannerCount">–</div>
+    <div class="b-p" data-i18n="banner_p">2027 年 1 月 1 日零点，全部胶囊同时进入可开封状态。封存过的人会回到这里，写给未来的话将逐句对账。</div>
+  </div>
+
+  <h2 data-i18n="faq_h2">常见问题</h2>
+  <div class="faq">
+    <details><summary data-i18n="q1">原文丢了怎么办？</summary><p data-i18n="a1">找不回。链上只有哈希、没有原文，任何人（包括我们）都无法恢复。封存前请把那句话存进你自己的密码管理器或备忘录——这是时光胶囊的规矩，也是它可信的原因。</p></details>
+    <details><summary data-i18n="q2">谁能看到我的内容？</summary><p data-i18n="a2">开封前：没有人。链上只有哈希，以及公开的名字与日期。等你本人在 2027 年 1 月 1 日之后亲手开封，原文才会公开上链。</p></details>
+    <details><summary data-i18n="q3">封存要花多少钱？</summary><p data-i18n="a3">只付你自己那笔封存交易的 gas（BNB Chain 上一笔合约交易，按当前网络状况估算约几美分，以钱包确认时显示为准）。产品本身不收费，合约没有任何收款功能。</p></details>
+    <details><summary data-i18n="q4">封了能改吗？</summary><p data-i18n="a4">不能。哈希就是承诺：原文改动一个字，开封时就对不上。这正是预言可信、信件不可抵赖的原因。</p></details>
+  </div>
+
+  <footer data-i18n="footer">DotAI Capsule · .ai 时光胶囊<br>设计原则：内容只以哈希上链、开封前无人能读 · 名字由官方 Agent ID 合约当场解析验真 · 合约不碰资产 · 合约没有 owner、没有任何管理权力，提交时明示。</footer>
+</div>
+<script src="./ethers.umd.min.js"></script>
+<script src="./capsule-boot.js"></script>
+
+<script src="./capsule-1.js"></script>
+<script src="./capsule-2.js"></script>
+<script src="./capsule-3.js"></script>
+<script src="./capsule-4.js"></script>
+</body>
+</html>
