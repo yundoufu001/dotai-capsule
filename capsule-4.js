@@ -20,7 +20,7 @@ function drawHeroSeal(){const c=document.getElementById('heroSeal');if(!c)return
   const x=c.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,300,300);drawSeal(x,150,150,118,'aurora.ai');}
 window.addEventListener('load',function(){drawHeroSeal();buildTierStrip();tickCountdown();});
 const _setLangCap=setLang;
-setLang=function(l){_setLangCap(l);buildTierStrip();};
+setLang=function(l){_setLangCap(l);buildTierStrip();if(typeof updateKindHint==='function')updateKindHint();};
 
 /* ---------- CSP: event bindings (inline onclick removed) ---------- */
 (function(){
@@ -34,4 +34,9 @@ setLang=function(l){_setLangCap(l);buildTierStrip();};
   b('btnCert',function(){drawMyCert();});
   b('btnDownload',function(){downloadCert();});
   b('btnReveal',function(){doReveal();});
+  b('btnSwitch',function(){switchChain();});
+  b('btnCred',function(){downloadCredAgain();});
+  b('btnCopyAddr',function(){if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(CONTRACT_ADDRESS).then(function(){setStatus(T().copied);},function(){});});
+  var ca=document.getElementById('contractAddr');if(ca)ca.textContent=CONTRACT_ADDRESS;
+  var bl=document.getElementById('bscLink');if(bl)bl.href='https://bscscan.com/address/'+CONTRACT_ADDRESS;
 })();

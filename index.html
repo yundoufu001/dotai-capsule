@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DotAI Capsule · .ai 时光胶囊</title>
+<link rel="icon" href="./favicon.ico" sizes="any">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%23e7bb41' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23e7bb41'/%3E%3C/svg%3E">
 <style>
   :root{--bg:#0b0e13;--bg2:#0e1219;--surface:#141922;--surface2:#171e2a;--line:#232b38;
@@ -101,7 +102,7 @@
   input[type=text],textarea{flex:1;min-width:260px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;
        color:var(--text);padding:13px 16px;font-size:14.5px;outline:none;font-family:inherit}
   textarea{min-height:74px;resize:vertical;line-height:1.6}
-  input[type=text]:focus,textarea:focus{border-color:var(--gold-dim)}
+  input[type=text]:focus,textarea:focus{border-color:var(--gold);outline:2px solid rgba(231,187,65,.6);outline-offset:1px}
   button.act{background:linear-gradient(120deg,var(--gold-hi),var(--gold));color:#141414;border:0;border-radius:12px;padding:13px 24px;font-size:14.5px;
        font-weight:700;cursor:pointer}
   button.ghost{background:transparent;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:13px 24px;font-size:14.5px;font-weight:500;cursor:pointer}
@@ -173,11 +174,13 @@
     .panel p{font-size:13px;line-height:1.6}#statusBar{margin-top:8px}}
   @media (max-width:380px){h1{font-size:33px}.b-big{font-size:29px}.sc-name{font-size:25px}
     .panel{padding:16px}.banner{padding:30px 16px}.stats{display:none}}
+  @media (max-height:520px){.hero-visual{display:none}.hero{padding-top:16px}}
   footer{margin-top:56px;border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font-size:12.5px;line-height:1.9}
   @media (max-width:600px){header{flex-wrap:wrap;gap:10px}.pill{display:none}input[type=text],textarea{min-width:0}}
 </style>
 </head>
 <body>
+<noscript><div style="padding:16px 20px;text-align:center;color:#e7bb41;font-size:14px;line-height:1.8">本页需要启用 JavaScript 才能连接钱包与封存胶囊。<br>This page needs JavaScript enabled to connect a wallet and seal a capsule.</div></noscript>
 <div class="wrap">
   <header>
     <div class="brand"><div class="mark">.ai</div>
@@ -213,6 +216,7 @@
     <p data-i18n="panel_p">连接持有 Agent ID 的钱包，前端会自动从官方合约带出你的 .ai 名字并双查验真。写下给 2027 的一句话：它只以哈希上链，开封前谁也看不见——包括我们。</p>
     <div class="row">
       <button class="act" id="btnConnect" data-i18n="btn_connect">连接钱包</button>
+      <button class="ghost" id="btnSwitch" style="display:none" data-i18n="btn_switch">切换到 BNB Chain</button>
       <span id="myName" style="font-weight:700"></span>
       <span id="myState" style="color:var(--muted);font-size:13px"></span>
     </div>
@@ -223,10 +227,12 @@
           <button id="kind1" data-i18n="kind1">对 Agent 生态的预言</button>
         </div>
       </div>
+      <div class="note" id="kindHint" style="margin-top:2px"></div>
       <div class="row">
         <textarea id="msgInput" data-i18n-ph="input_ph" placeholder="写给 2027 的一句话（≤280 字节，中文约 93 字）"></textarea>
       </div>
       <div class="note" id="msgBytes" style="margin-top:6px"></div>
+      <div class="note" data-i18n="seal_deadline">封存截止：2027-01-01 00:00（即开封时刻）。截止后不能再封存新胶囊。</div>
       <div class="row">
         <button class="act" id="btnSeal" data-i18n="btn_seal">封存上链</button>
       </div>
@@ -240,6 +246,7 @@
       <div class="row">
         <button class="ghost" id="btnCert" data-i18n="btn_cert">生成我的胶囊证书</button>
         <button class="ghost" id="btnDownload" data-i18n="btn_download">下载证书 PNG（1200×630）</button>
+        <button class="ghost" id="btnCred" style="display:none" data-i18n="btn_cred">下载开封凭证</button>
       </div>
       <div class="row"><canvas id="poster" width="1200" height="630"></canvas></div>
       <div id="revealBox" style="display:none">
@@ -296,17 +303,28 @@
     <details><summary data-i18n="q1">原文丢了怎么办？</summary><p data-i18n="a1">找不回。链上只有哈希、没有原文，任何人（包括我们）都无法恢复。封存前请把那句话存进你自己的密码管理器或备忘录——这是时光胶囊的规矩，也是它可信的原因。</p></details>
     <details><summary data-i18n="q2">谁能看到我的内容？</summary><p data-i18n="a2">开封前：没有人。链上只有哈希，以及公开的名字与日期。等你本人在 2027 年 1 月 1 日之后亲手开封，原文才会公开上链。</p></details>
     <details><summary data-i18n="q3">封存要花多少钱？</summary><p data-i18n="a3">只付你自己那笔封存交易的 gas（BNB Chain 上一笔合约交易，按当前网络状况估算约几美分，以钱包确认时显示为准）。产品本身不收费，合约没有任何收款功能。</p></details>
-    <details><summary data-i18n="q4">封了能改吗？</summary><p data-i18n="a4">不能。哈希就是承诺：原文改动一个字，开封时就对不上。这正是预言可信、信件不可抵赖的原因。</p></details>
+    <details><summary data-i18n="q4">封了能改吗？</summary><p data-i18n="a4">不能。信的原文一旦上链不可更改；预言的哈希就是承诺，改一个字就开不了。这正是它们可信的原因。</p></details>
+    <details><summary data-i18n="q5">信和预言有什么区别？</summary><p data-i18n="a5">信：原文保存在链上，开封夜（2027-01-01 零点）网站自动把所有信公开，你不需要回来操作——但正因如此，请勿在信里写秘密。预言：只有哈希上链，原文只在你手里，开封夜由你本人回来输入原文开封——防提前看、防抄袭，时间作证。</p></details>
+    <details><summary data-i18n="q6">预言的原文丢了怎么办？</summary><p data-i18n="a6">找不回。链上只有哈希、没有原文，任何人（包括我们）都无法恢复。所以封存预言成功后，页面会自动下载一份开封凭证文件（内含原文），请把它和这句话一起保存好。</p></details>
+    <details><summary data-i18n="q7">信里能写秘密吗？</summary><p data-i18n="a7">不能。信的原文保存在链上，任何人用区块链工具都能读到（网站只是不在开封前展示）。秘密、密码、隐私信息请不要写进信里；真正想保密的内容请写成预言——预言只有哈希上链。</p></details>
+    <details><summary data-i18n="q8">2027 年之后还能封存吗？</summary><p data-i18n="a8">不能。封存截止就是开封时刻：2027-01-01 00:00。截止后合约拒绝一切新封存；已封存的信在那一刻起自动公开，预言等作者回来开封。</p></details>
   </div>
 
-  <footer data-i18n="footer">DotAI Capsule · .ai 时光胶囊<br>设计原则：内容只以哈希上链、开封前无人能读 · 名字由官方 Agent ID 合约当场解析验真 · 合约不碰资产 · 合约没有 owner、没有任何管理权力，提交时明示。</footer>
+  <footer>
+    <div data-i18n="footer">DotAI Capsule · .ai 时光胶囊<br>设计原则：信件原文上链保存、开封夜统一公开；预言只有哈希上链、原文只在作者手里 · 名字由官方 Agent ID 合约当场解析验真 · 合约不碰资产 · 合约没有 owner、没有任何管理权力。</div>
+    <div class="note" style="margin-top:12px"><span data-i18n="contract_addr_lbl">合约地址（BNB Chain）</span>：<span class="hashfp" id="contractAddr"></span>
+      <button class="ghost" id="btnCopyAddr" style="padding:4px 12px;font-size:12px" data-i18n="copy_addr">复制地址</button>
+      <a id="bscLink" href="https://bscscan.com/address/0x2c26075a8800f4562c0cebB003C4E6cCf7a84523" target="_blank" rel="noopener" style="color:var(--gold)">BscScan ↗</a>
+      <span data-i18n="footer_pending">（v2 地址待部署回填；当前所示为 v1 测试部署）</span></div>
+    <div class="note" data-i18n="antiphish">防钓鱼：本站唯一入口是当前域名；我们永不私信发链接、永不要求你授权或转账。认准下方合约地址。</div>
+  </footer>
 </div>
-<script src="./ethers.umd.min.js?v=20261119d"></script>
-<script src="./capsule-boot.js?v=20261119d"></script>
+<script src="./ethers.umd.min.js?v=20261119e"></script>
+<script src="./capsule-boot.js?v=20261119e"></script>
 
-<script src="./capsule-1.js?v=20261119d"></script>
-<script src="./capsule-2.js?v=20261119d"></script>
-<script src="./capsule-3.js?v=20261119d"></script>
-<script src="./capsule-4.js?v=20261119d"></script>
+<script src="./capsule-1.js?v=20261119e"></script>
+<script src="./capsule-2.js?v=20261119e"></script>
+<script src="./capsule-3.js?v=20261119e"></script>
+<script src="./capsule-4.js?v=20261119e"></script>
 </body>
 </html>

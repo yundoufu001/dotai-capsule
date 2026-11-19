@@ -106,7 +106,7 @@ function drawCert(){
   const kindTxt=l==='zh'?(MY.kind===0?'给 2027 的信':'对 Agent 生态的预言'):(MY.kind===0?'LETTER TO 2027':'PREDICTION FOR THE AGENT ECOSYSTEM');
   x.fillText('#'+String(MY.seq).padStart(3,'0')+' · '+kindTxt,72,388);
   x.fillStyle='#edeef2';x.font=(l==='zh'?'29px "Segoe UI","Microsoft YaHei",sans-serif':'26px "Segoe UI",sans-serif');
-  x.fillText(l==='zh'?'内容已封存 · 开封前无人能读':'Content sealed · unreadable until opening day',72,448);
+  x.fillText(l==='zh'?(MY.kind===0?'信已上链保存 · 开封夜自动公开':'预言已封存 · 开封前无人能读'):(MY.kind===0?'Letter stored on-chain · published automatically on opening night':'Prediction sealed · unreadable until opening day'),72,448);
   x.fillStyle='#98a2b3';x.font='23px "Segoe UI",sans-serif';
   x.fillText((l==='zh'?'内容指纹 ':'Fingerprint ')+hashShort(MY.hash),72,492);
   x.fillText((l==='zh'?'封存 ':'Sealed ')+fmtDate(MY.sealedAt)+' · '+(l==='zh'?'2027-01-01 跨年夜开封':'Opens New Year’s Eve · 2027-01-01')+' · BNB Chain',72,548);
@@ -121,21 +121,27 @@ function downloadCert(){if(!MY.seq){setStatus(T().st_connect);return;}drawCert()
 let READ=null, SIGNER=null, CAP_R=null, CAP_W=null, AGENT_R=null;
 let MY={address:null,name:null,seq:0,kind:0,hash:'',sealedAt:0,revealed:false,text:''};
 let CAPSULES=[], OPEN_TS=OPEN_TIME_MAINNET, MYKIND=0, CAP_LOAD_ERR=false, CAP_LOADING=false, OPEN_TS_OK=false, LOAD_RETRIED=false, LOAD_SEQ=0, OPEN_ANNOUNCED=false;
-let _readProv=null;function readProvider(){if(_readProv)return _readProv;const urls=[CFG.rpc,...BSC_RPCS.filter(u=>u!==CFG.rpc)];_readProv=new ethers.FallbackProvider(urls.map((u,i)=>({provider:new ethers.JsonRpcProvider(u),priority:i+1,stallTimeout:600,weight:1})),56,{quorum:1});return _readProv;}
+let TIME_OFFSET=0, SEAL_ARMED=false, LAST_PRED=null; /* V2: chain-clock offset (s), letter-seal confirm arm, in-session prediction text for the credential file */
+let _readProv=null;function readProvider(){if(_readProv)return _readProv;const urls=[CFG.rpc,...BSC_RPCS.filter(u=>u!==CFG.rpc)];_readProv=new ethers.FallbackProvider(urls.map((u,i)=>({provider:new ethers.JsonRpcProvider(u,56,{staticNetwork:true}),priority:i+1,stallTimeout:600,weight:1})),56,{quorum:1});return _readProv;}
 function initRead(){
   READ=readProvider();
   AGENT_R=new ethers.Contract(CFG.agent,OFFICIAL_ABI,READ);
   if(DEPLOYED)CAP_R=new ethers.Contract(CFG.cap,CAP_ABI,READ);
 }
-async function resolveName(addr){
-  const bal=await AGENT_R.balanceOf(addr);
-  if(bal===0n)return{ok:false,reason:'no_id'};
+async function resolveName(addr,forGallery){
+  /* V2-F2: gallery addresses are sealed holders by construction (only
+     holders can seal), so the balanceOf pre-check is skipped there;
+     handleOf first, then the two ownership checks run in parallel —
+     serial depth 4 -> 2. The connect flow keeps the balanceOf gate. */
+  if(!forGallery){
+    const bal=await AGENT_R.balanceOf(addr);
+    if(bal===0n)return{ok:false,reason:'no_id'};
+  }
   const label=await AGENT_R.handleOf(addr);
   if(!label)return{ok:false,reason:'no_id'};
-  const o1=await AGENT_R.ownerOfHandle(label);
   const tid=ethers.keccak256(ethers.toUtf8Bytes(label));
-  const o2=await AGENT_R.ownerOf(tid);
-  if(o1.toLowerCase()!==addr.toLowerCase()||o2.toLowerCase()!==addr.toLowerCase())
+  const oo=await Promise.all([AGENT_R.ownerOfHandle(label),AGENT_R.ownerOf(tid)]);
+  if(oo[0].toLowerCase()!==addr.toLowerCase()||oo[1].toLowerCase()!==addr.toLowerCase())
     return{ok:false,reason:'bad_verify',label:label};
   return{ok:true,label:label,name:label+'.ai'};
 }
@@ -150,36 +156,43 @@ async function loadCapsules(){
   CAPSULES=[];CAP_LOAD_ERR=false;
   if(!DEPLOYED){renderCapsules();tickCountdown();return;}
   CAP_LOADING=true;renderCapsules();
-  /* M1: hard 20s ceiling. A head endpoint answering sustained HTTP 429 makes
-     ethers back off internally and can stall FallbackProvider arbitration
-     indefinitely — on timeout, show the honest load-error state (never the
-     fake "no capsules yet" empty state), discard the late result, and retry
-     once in the background. */
+  /* M1 (kept) + V2-F2: the hard 20s ceiling now guards ONLY the list fetch
+     (openTime + count + capsulesList). Name resolution runs afterwards in
+     batches and backfills short-address placeholders, so a slow name
+     service can no longer stall the whole gallery behind the ceiling.
+     On timeout: honest load-error state, late result discarded, one
+     background retry. */
   const timer=setTimeout(()=>{
     if(seq!==LOAD_SEQ)return;
     LOAD_SEQ++;CAP_LOADING=false;CAP_LOAD_ERR=true;
     renderCapsules();tickCountdown();scheduleLoadRetry();
   },20000);
+  let L=null,n=0;
   try{
     OPEN_TS=Number(await CAP_R.openTime());OPEN_TS_OK=true;
-    const n=Number(await CAP_R.capsuleCount());
-    if(n>0){
-      const L=await CAP_R.capsulesList(0,n);
-      for(let i=0;i<n;i+=8){
-        const batch=Array.from({length:Math.min(8,n-i)},(_,j)=>i+j);
-        const names=await Promise.all(batch.map(k=>resolveName(L[0][k]).then(r=>r.ok?r.name:null).catch(()=>null)));
-        batch.forEach((k,j)=>{const nm=names[j];
-          CAPSULES.push({user:L[0][k],kind:Number(L[1][k]),hash:L[2][k],at:Number(L[3][k]),revealed:L[4][k],text:L[5][k],
-            name:nm||(L[0][k].slice(0,6)+'…'+L[0][k].slice(-4)),unresolved:!nm});});
-      }
-    }
+    tickCountdown(); /* V2-F3: countdown renders the moment openTime lands */
+    try{const blk=await READ.getBlock('latest');if(blk)TIME_OFFSET=Number(blk.timestamp)-Math.floor(Date.now()/1000);}catch(_){/* keep offset 0 */}
+    n=Number(await CAP_R.capsuleCount());
+    if(n>0)L=await CAP_R.capsulesList(0,n);
   }catch(e){if(seq===LOAD_SEQ){CAP_LOAD_ERR=true;console.warn('loadCapsules',e);}}
   clearTimeout(timer);
   if(seq!==LOAD_SEQ)return; /* timed out or superseded — late result discarded */
   CAP_LOADING=false;
-  if(CAP_LOAD_ERR)scheduleLoadRetry();else LOAD_RETRIED=false;
-  if(!CAP_LOAD_ERR)document.getElementById('statCap').textContent=CAPSULES.length+' / 30+';
+  if(CAP_LOAD_ERR){renderCapsules();tickCountdown();scheduleLoadRetry();return;}
+  LOAD_RETRIED=false;
+  if(L){for(let k=0;k<n;k++){
+    CAPSULES.push({user:L[0][k],kind:Number(L[1][k]),hash:L[2][k],at:Number(L[3][k]),revealed:L[4][k],text:L[5][k],
+      name:L[0][k].slice(0,6)+'…'+L[0][k].slice(-4),unresolved:true,nameDone:false});}}
+  document.getElementById('statCap').textContent=String(CAPSULES.length);
   renderCapsules();tickCountdown();
+  /* phase 2: resolve names in batches of 8, backfill + repaint per batch */
+  for(let i=0;i<CAPSULES.length;i+=8){
+    if(seq!==LOAD_SEQ)return;
+    const batch=CAPSULES.slice(i,i+8);
+    const names=await Promise.all(batch.map(e=>resolveName(e.user,true).then(r=>r.ok?r.name:null).catch(()=>null)));
+    batch.forEach((e,j)=>{e.nameDone=true;if(names[j]){e.name=names[j];e.unresolved=false;}});
+    renderCapsules();
+  }
 }
 function renderCapsules(){
   const grid=document.getElementById('capGrid');if(!grid)return;
@@ -195,9 +208,16 @@ function renderCapsules(){
     card.appendChild(nm);
     const kt=document.createElement('span');kt.className='tag kind';kt.textContent=(e.kind===0?T().kind0:T().kind1);card.appendChild(kt);
     const st=document.createElement('div');st.className='msg';st.style.marginTop='10px';
-    st.textContent=e.revealed?e.text:('🔒 '+T().cap_sealed+' · '+fmtDate(e.at));
+    const openedC=OPEN_TS_OK&&((Math.floor(Date.now()/1000)+TIME_OFFSET)>=OPEN_TS);
+    if(e.kind===0){
+      st.textContent=(openedC&&e.text)?e.text:('🔒 '+T().cap_letter_wait+' · '+fmtDate(e.at));
+    }else if(e.revealed){
+      st.textContent=e.text;
+    }else{
+      st.textContent='🔒 '+(openedC?T().cap_wait_author:T().cap_sealed)+' · '+fmtDate(e.at);
+    }
     card.appendChild(st);
-    if(e.unresolved){const ut=document.createElement('span');ut.className='tag';ut.textContent=T().tag_unresolved;card.appendChild(ut);}
+    if(e.unresolved&&e.nameDone){const ut=document.createElement('span');ut.className='tag';ut.textContent=T().tag_unresolved;card.appendChild(ut);}
     if(ti.kind==='legend'){const t=document.createElement('span');t.className='legend-tag';t.textContent=T().legendary;card.appendChild(t);}
     else if(ti.kind==='epic'||ti.kind==='rare'){const t=document.createElement('span');t.className='tag';t.textContent=(ti.kind==='epic'?T().epic:T().rare);card.appendChild(t);}
     grid.appendChild(card);});
@@ -220,28 +240,43 @@ function renderMyPanel(){
     form.style.display='none';mine.style.display='';
     document.getElementById('myCapInfo').textContent=T().cap_info(String(MY.seq).padStart(3,'0'),MY.kind)+' · '+fmtDate(MY.sealedAt);
     document.getElementById('myCapHash').textContent=T().cap_hash(hashShort(MY.hash));
-    const opened=Date.now()/1000>=OPEN_TS;
+    const opened=(Math.floor(Date.now()/1000)+TIME_OFFSET)>=OPEN_TS;
     const rb=document.getElementById('revealBox');
-    if(MY.revealed){rb.style.display='none';document.getElementById('myCapNote').textContent=T().cap_revealed(MY.text);}
-    else if(opened){rb.style.display='';document.getElementById('myCapNote').textContent=T().cap_can_reveal;}
-    else{rb.style.display='none';document.getElementById('myCapNote').textContent=T().cap_wait;}
+    const bc=document.getElementById('btnCred');if(bc)bc.style.display=(MY.kind===1)?'':'none';
+    if(MY.kind===0){
+      /* V2-C2/F10: letters never get a reveal box — the getter releases
+         the text at openTime and this panel simply shows it. */
+      rb.style.display='none';
+      if(opened&&MY.text){document.getElementById('myCapNote').textContent=T().cap_revealed(MY.text);}
+      else if(opened){document.getElementById('myCapNote').textContent=T().cap_can_reveal(0);}
+      else{document.getElementById('myCapNote').textContent=T().cap_wait(0);}
+    }
+    else if(MY.revealed){rb.style.display='none';document.getElementById('myCapNote').textContent=T().cap_revealed(MY.text);}
+    else if(opened){rb.style.display='';document.getElementById('myCapNote').textContent=T().cap_can_reveal(1);}
+    else{rb.style.display='none';document.getElementById('myCapNote').textContent=T().cap_wait(1);}
   }else{
     form.style.display='';mine.style.display='none';
   }
 }
 function setKind(k){MYKIND=k;
   document.getElementById('kind0').classList.toggle('on',k===0);
-  document.getElementById('kind1').classList.toggle('on',k===1);}
+  document.getElementById('kind1').classList.toggle('on',k===1);
+  SEAL_ARMED=false;const b=document.getElementById('btnSeal');if(b)b.textContent=T().btn_seal;
+  updateKindHint();}
+function updateKindHint(){const h=document.getElementById('kindHint');if(h)h.textContent=(MYKIND===0?T().kind_hint0:T().kind_hint1);}
 function tickCountdown(){
   const el=document.getElementById('statCount');if(!el)return;
   /* L3: if the on-chain openTime never loaded, say the countdown is
      unavailable instead of silently counting to the hardcoded default. */
   if(DEPLOYED&&!OPEN_TS_OK){el.textContent=T().cd_unavail;const bcU=document.getElementById('bannerCount');if(bcU)bcU.textContent=el.textContent;return;}
-  const now=Math.floor(Date.now()/1000),diff=OPEN_TS-now;
+  const now=Math.floor(Date.now()/1000)+TIME_OFFSET,diff=OPEN_TS-now; /* V2-F3: local clock calibrated against the latest block timestamp */
   if(diff<=0){el.textContent=T().cd_opened;const bc0=document.getElementById('bannerCount');if(bc0)bc0.textContent=el.textContent;
-    /* L1: crossing zero re-renders my panel, so a connected user who stays
-       on the page sees the reveal box appear without a manual refresh. */
-    if(!OPEN_ANNOUNCED){OPEN_ANNOUNCED=true;if(MY.seq>0)renderMyPanel();}
+    /* L1 + V2: crossing zero re-fetches on-chain state, so a user who
+       stays on the page sees letters light up automatically and the
+       prediction reveal box appear — no manual refresh needed. */
+    if(!OPEN_ANNOUNCED){OPEN_ANNOUNCED=true;
+      if(DEPLOYED){loadCapsules();if(MY.address)refreshMine().catch(()=>{});}
+      else if(MY.seq>0)renderMyPanel();}
     return;}
   OPEN_ANNOUNCED=false;
   const d=Math.floor(diff/86400),h=Math.floor(diff%86400/3600),m=Math.floor(diff%3600/60),s=diff%60;
@@ -268,11 +303,15 @@ async function connectWallet(){
       const bp=new ethers.BrowserProvider(window.ethereum);
       const net=await bp.getNetwork();
       if(Number(net.chainId)!==CFG.chainId){
-        setStatus(T().st_wrong_chain);
+        /* V2-F4: never stall silently on the wrong chain — ask the wallet
+           to switch; if that fails, leave a persistent switch button next
+           to Connect instead of dying inside name resolution (R3 N2). */
+        setStatus(T().st_wrong_chain);updateSwitchBtn(true);
         try{setStatus(T().st_switching);
           await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x'+CFG.chainId.toString(16)}]});
+          updateSwitchBtn(false);
         }catch(sw){setStatus(T().st_wrong_chain);return;}
-      }
+      }else updateSwitchBtn(false);
       await window.ethereum.request({method:'eth_requestAccounts'});
       SIGNER=await bp.getSigner();
     }
@@ -297,25 +336,91 @@ async function doSeal(){
   /* L2: wallet connected but holds no Agent ID — say that, not "connect first". */
   if(!MY.name){setStatus(T().st_no_id);return;}
   if(MY.seq>0){setStatus(T().st_dup_seal);return;}
+  /* V2-C1/F5: the sealing deadline IS the opening moment. The client-side
+     check produces the dedicated copy; the contract enforces it anyway. */
+  if(OPEN_TS_OK&&(Math.floor(Date.now()/1000)+TIME_OFFSET)>=OPEN_TS){setStatus(T().st_seal_closed);return;}
   const text=document.getElementById('msgInput').value.trim();
   if(!text){setStatus(T().st_msg_empty);return;}
   const nBytes=new TextEncoder().encode(text).length;
   if(nBytes>280){setStatus(T().st_msg_long(nBytes));return;}
+  /* V2-F10: a letter's text is stored on-chain — warn once, explicitly,
+     and require a second click on the relabelled button to proceed. */
+  if(MYKIND===0&&!SEAL_ARMED){
+    SEAL_ARMED=true;
+    setStatus(T().letter_warn);
+    const bb=document.getElementById('btnSeal');if(bb)bb.textContent=T().btn_seal_confirm;
+    return;
+  }
   try{setStatus(T().st_sealing);
-    const h=contentHashFor(MY.address,text);
-    const tx=await CAP_W.seal(MYKIND,h);await tx.wait();
-    await refreshMine();await loadCapsules();
-    setStatusFn(()=>T().st_done);
+    if(MYKIND===0){
+      const tx=await CAP_W.sealLetter(text);await tx.wait();
+      SEAL_ARMED=false;const b0=document.getElementById('btnSeal');if(b0)b0.textContent=T().btn_seal;
+      await refreshMine();await loadCapsules();
+      setStatusFn(()=>T().st_done);
+    }else{
+      const h=contentHashFor(MY.address,text);
+      const tx=await CAP_W.sealPrediction(h);await tx.wait();
+      LAST_PRED={text:text,hash:h};
+      await refreshMine();await loadCapsules();
+      downloadCredential(); /* V2-F10: credential file downloads automatically */
+      setStatus(T().st_done+' '+T().cred_saved);
+    }
     if(PREVIEW)document.body.dataset.previewDone='1';
   }catch(e){setStatus(humanErr(e));}
+}
+function downloadCredential(){
+  if(!LAST_PRED)return;
+  const lines=[
+   'DotAI Capsule · .ai Time Capsule — Opening Credential / 开封凭证',
+   '==============================================================',
+   'Kind / 种类: Prediction (kind 1) / 对 Agent 生态的预言',
+   'Author / 作者地址: '+MY.address,
+   'Name / 名字: '+(MY.name||''),
+   'Capsule / 胶囊编号: #'+(MY.seq?String(MY.seq).padStart(3,'0'):''),
+   'Contract / 合约地址 (BNB Chain): '+CFG.cap,
+   'Content hash / 内容哈希: '+LAST_PRED.hash,
+   'Opens / 开封时间: 2027-01-01 00:00 CST (unix '+OPEN_TS+')',
+   '',
+   '--- Your original text / 你的原文 (type it exactly to open / 开封时一字不差地输入) ---',
+   LAST_PRED.text,
+   '--- end of text / 原文结束 ---',
+   '',
+   'ZH: 这份文件是开封这颗预言胶囊的唯一凭证。链上只有哈希、没有原文，任何人（包括我们）都无法找回。',
+   '请把这份文件保存在安全的地方。2027-01-01 之后回到网站，连接同一个钱包，输入上面的原文即可开封。',
+   'EN: This file is the only credential for opening your prediction. Only the hash is on-chain;',
+   'nobody — including us — can recover the text. Keep this file safe. After 2027-01-01, return',
+   'to the site, connect the same wallet, and type the text above exactly as written.'
+  ];
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(lines.join('\n'));
+  a.download='dotai-capsule-credential-'+(MY.seq?String(MY.seq).padStart(3,'0'):'')+'.txt';
+  a.click();
+}
+function downloadCredAgain(){
+  if(LAST_PRED){downloadCredential();setStatus(T().cred_saved);}
+  else setStatus(T().cred_again);
+}
+function updateSwitchBtn(show){const b=document.getElementById('btnSwitch');if(b)b.style.display=show?'':'none';}
+async function switchChain(){
+  if(!window.ethereum){setStatus(T().st_no_wallet);return;}
+  try{setStatus(T().st_switching);
+    await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x'+CFG.chainId.toString(16)}]});
+    updateSwitchBtn(false);
+  }catch(e){setStatus(T().st_wrong_chain);}
 }
 async function doReveal(){
   if(!DEPLOYED){setStatus(T().st_notdeployed_op);return;}
   if(!SIGNER||!MY.seq){setStatus(T().st_connect);return;}
+  if(MY.kind===0){setStatus(T().cap_can_reveal(0));return;} /* letters open automatically — no reveal */
   const text=document.getElementById('revealInput').value.trim();
   if(!text){setStatus(T().st_msg_empty);return;}
   const nBytes=new TextEncoder().encode(text).length;
   if(nBytes>280){setStatus(T().st_msg_long(nBytes));return;}
+  /* V2-F9: local pre-check — recompute the address-bound hash and compare
+     with the sealed hash BEFORE sending anything. A mismatch costs the
+     user zero gas and gets its own copy instead of a generic failure. */
+  if(contentHashFor(MY.address,text).toLowerCase()!==String(MY.hash).toLowerCase()){
+    setStatus(T().st_hash_precheck);return;}
   try{setStatus(T().st_revealing);
     const tx=await CAP_W.reveal(text);await tx.wait();
     await refreshMine();await loadCapsules();
@@ -333,10 +438,17 @@ if(window.ethereum&&window.ethereum.on){
 /* init */
 try{initRead();}catch(e){setStatus('Ethers library failed to load — check your connection and reload. / ethers 库加载失败，请检查网络后刷新。');}
 const _mi=document.getElementById('msgInput'),_mb=document.getElementById('msgBytes');
-function _updBytes(){if(!_mi||!_mb)return;const n=new TextEncoder().encode(_mi.value.trim()).length;_mb.textContent=T().msg_bytes(n);_mb.style.color=n>280?'#e06c5c':'';}
+function _updBytes(){if(!_mi||!_mb)return;const n=new TextEncoder().encode(_mi.value.trim()).length;_mb.textContent=T().msg_bytes(n);_mb.style.color=n>280?'#e06c5c':'';
+  /* V2-F8 (m10): over-limit disables the seal button outright instead of
+     only complaining at submit time; editing also disarms the letter
+     confirm so the warning always matches the current text. */
+  const b=document.getElementById('btnSeal');
+  if(b&&MY.seq===0)b.disabled=n>280;
+  if(SEAL_ARMED){SEAL_ARMED=false;if(b)b.textContent=T().btn_seal;}}
 if(_mi)_mi.addEventListener('input',_updBytes);
 const _ql=QS.get('lang');
 setLang(_ql==='en'||_ql==='zh'?_ql:(((navigator.language||'').toLowerCase().startsWith('zh')?'zh':'en')));
+updateKindHint();
 loadCapsules().then(async()=>{
   if(PREVIEW&&QS.get('auto')==='1'){
     await connectWallet();
