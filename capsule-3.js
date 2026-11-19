@@ -264,9 +264,10 @@ async function connectWallet(){
     await refreshMine();
     if(MY.seq>0)setStatusFn(()=>T().st_sealed(String(MY.seq).padStart(3,'0')));
     else setStatusFn(()=>T().st_holder(r.name));
-  }catch(e){setStatus(humanErr(e));}
+  }catch(e){setStatus(humanErr(e,'read'));}
 }
 async function doSeal(){
+  if(!DEPLOYED){setStatus(T().st_notdeployed_op);return;}
   if(!SIGNER||!MY.name){setStatus(T().st_connect);return;}
   if(MY.seq>0){setStatus(T().st_dup_seal);return;}
   const text=document.getElementById('msgInput').value.trim();
@@ -282,6 +283,7 @@ async function doSeal(){
   }catch(e){setStatus(humanErr(e));}
 }
 async function doReveal(){
+  if(!DEPLOYED){setStatus(T().st_notdeployed_op);return;}
   if(!SIGNER||!MY.seq){setStatus(T().st_connect);return;}
   const text=document.getElementById('revealInput').value.trim();
   if(!text){setStatus(T().st_msg_empty);return;}

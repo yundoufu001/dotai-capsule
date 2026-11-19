@@ -39,7 +39,9 @@ zh:{brand_sub:'.ai 时光胶囊 · 给 2027 留一句话',
   reveal_ph:'开封时间已到：在这里写下当初那句原文，哈希对上即可开封',btn_reveal:'开封我的胶囊',
   st_connect:'请先连接钱包。',st_connecting:'连接中…',st_no_wallet:'未检测到钱包，请用支持 Web3 的钱包打开本页。',
   st_resolving:'正在从官方合约解析你的 .ai 名字…',
-  st_holder:(n)=>'已验真：'+n+' · 可以封存你的胶囊了。',
+  st_holder:(n)=>'已验真：'+n+(DEPLOYED?' · 可以封存你的胶囊了。':' · 合约部署完成后即可封存。'),
+  st_notdeployed_op:'合约尚未部署，这项功能还没开放——部署完成后回到这里即可使用。',
+  st_readonly:'链上数据读取失败（网络或 RPC 暂不可用）。这一步没有发出任何交易，请稍后重试。',
   st_sealed:(s)=>'你的胶囊是 #'+s+'，已封存。可以生成证书了。',
   st_no_id:'这个钱包没有 Agent ID（官方合约 balanceOf = 0），无法封存。换一个持有 .ai 的钱包试试。',
   st_bad_verify:'名字验真未通过（ownerOfHandle / ownerOf 双查不一致），已拒绝封存。',
@@ -103,7 +105,9 @@ en:{brand_sub:'.ai Time Capsule · A message to 2027',
   reveal_ph:'Opening time is here: type the exact original sentence — it opens only if the hash matches',btn_reveal:'Open my capsule',
   st_connect:'Connect your wallet first.',st_connecting:'Connecting…',st_no_wallet:'No wallet detected. Open this page in a Web3 wallet browser.',
   st_resolving:'Resolving your .ai name from the official contract…',
-  st_holder:(n)=>'Verified: '+n+' · you can seal your capsule now.',
+  st_holder:(n)=>'Verified: '+n+(DEPLOYED?' · you can seal your capsule now.':' · sealing opens once the contract is deployed.'),
+  st_notdeployed_op:'The contract is not deployed yet, so this is not open yet — come back here once it is deployed.',
+  st_readonly:'Could not read on-chain data (network or RPC unavailable). No transaction was sent in this step — please try again later.',
   st_sealed:(s)=>'Your capsule is #'+s+', sealed. Your certificate is ready to create.',
   st_no_id:'This wallet holds no Agent ID (official balanceOf = 0) and cannot seal. Try a wallet that holds a .ai name.',
   st_bad_verify:'Name verification failed (ownerOfHandle / ownerOf cross-check mismatch). Sealing refused.',
@@ -170,7 +174,7 @@ function setLang(l){
   if(MY.name&&MY.seq)drawCert();
   tickCountdown();
 }
-function humanErr(e){
+function humanErr(e,kind){
   const code=e&&(e.code||(e.info&&e.info.error&&e.info.error.code));
   const msg=String((e&&(e.shortMessage||e.message))||'');
   if(code===4001||code==='ACTION_REJECTED'||/user rejected|denied/i.test(msg))return T().st_cancelled;
@@ -179,6 +183,7 @@ function humanErr(e){
   if(/not opened yet/.test(msg))return T().st_not_open;
   if(/hash mismatch/.test(msg))return T().st_hash_mismatch;
   if(/no Agent ID/.test(msg))return T().st_no_id;
+  if(kind==='read')return T().st_readonly;
   return T().st_generic;
 }
 
