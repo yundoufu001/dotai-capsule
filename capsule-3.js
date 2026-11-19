@@ -120,7 +120,7 @@ function downloadCert(){if(!MY.seq){setStatus(T().st_connect);return;}drawCert()
 /* ---------- chain layer ---------- */
 let READ=null, SIGNER=null, CAP_R=null, CAP_W=null, AGENT_R=null;
 let MY={address:null,name:null,seq:0,kind:0,hash:'',sealedAt:0,revealed:false,text:''};
-let CAPSULES=[], OPEN_TS=OPEN_TIME_MAINNET, MYKIND=0, CAP_LOAD_ERR=false;
+let CAPSULES=[], OPEN_TS=OPEN_TIME_MAINNET, MYKIND=0, CAP_LOAD_ERR=false, CAP_LOADING=false, OPEN_TS_OK=false, LOAD_RETRIED=false, LOAD_SEQ=0, OPEN_ANNOUNCED=false;
 let _readProv=null;function readProvider(){if(_readProv)return _readProv;const urls=[CFG.rpc,...BSC_RPCS.filter(u=>u!==CFG.rpc)];_readProv=new ethers.FallbackProvider(urls.map((u,i)=>({provider:new ethers.JsonRpcProvider(u),priority:i+1,stallTimeout:600,weight:1})),56,{quorum:1});return _readProv;}
 function initRead(){
   READ=readProvider();
@@ -144,11 +144,24 @@ function contentHashFor(addr,text){
      The plaintext never leaves the browser; only this hash goes on-chain. */
   return ethers.solidityPackedKeccak256(['address','bytes'],[addr,ethers.toUtf8Bytes(text)]);
 }
+function scheduleLoadRetry(){if(LOAD_RETRIED)return;LOAD_RETRIED=true;setTimeout(()=>{loadCapsules();},5000);}
 async function loadCapsules(){
-  CAPSULES=[];
+  const seq=++LOAD_SEQ;
+  CAPSULES=[];CAP_LOAD_ERR=false;
   if(!DEPLOYED){renderCapsules();tickCountdown();return;}
+  CAP_LOADING=true;renderCapsules();
+  /* M1: hard 20s ceiling. A head endpoint answering sustained HTTP 429 makes
+     ethers back off internally and can stall FallbackProvider arbitration
+     indefinitely — on timeout, show the honest load-error state (never the
+     fake "no capsules yet" empty state), discard the late result, and retry
+     once in the background. */
+  const timer=setTimeout(()=>{
+    if(seq!==LOAD_SEQ)return;
+    LOAD_SEQ++;CAP_LOADING=false;CAP_LOAD_ERR=true;
+    renderCapsules();tickCountdown();scheduleLoadRetry();
+  },20000);
   try{
-    OPEN_TS=Number(await CAP_R.openTime());
+    OPEN_TS=Number(await CAP_R.openTime());OPEN_TS_OK=true;
     const n=Number(await CAP_R.capsuleCount());
     if(n>0){
       const L=await CAP_R.capsulesList(0,n);
@@ -160,7 +173,11 @@ async function loadCapsules(){
             name:nm||(L[0][k].slice(0,6)+'…'+L[0][k].slice(-4)),unresolved:!nm});});
       }
     }
-  }catch(e){CAP_LOAD_ERR=true;console.warn('loadCapsules',e);}
+  }catch(e){if(seq===LOAD_SEQ){CAP_LOAD_ERR=true;console.warn('loadCapsules',e);}}
+  clearTimeout(timer);
+  if(seq!==LOAD_SEQ)return; /* timed out or superseded — late result discarded */
+  CAP_LOADING=false;
+  if(CAP_LOAD_ERR)scheduleLoadRetry();else LOAD_RETRIED=false;
   if(!CAP_LOAD_ERR)document.getElementById('statCap').textContent=CAPSULES.length+' / 30+';
   renderCapsules();tickCountdown();
 }
@@ -194,7 +211,7 @@ function renderCapsules(){
       grid.appendChild(card);}
   }
   document.getElementById('capEmpty').textContent=
-    CAPSULES.length?'':(CAP_LOAD_ERR?T().cap_loaderr:(DEPLOYED?T().cap_empty:T().cap_notdeployed));
+    CAPSULES.length?'':(CAP_LOADING?T().cap_loading:(CAP_LOAD_ERR?T().cap_loaderr:(DEPLOYED?T().cap_empty:T().cap_notdeployed)));
 }
 function renderMyPanel(){
   const form=document.getElementById('sealForm'),mine=document.getElementById('myCapsule');
@@ -217,8 +234,16 @@ function setKind(k){MYKIND=k;
   document.getElementById('kind1').classList.toggle('on',k===1);}
 function tickCountdown(){
   const el=document.getElementById('statCount');if(!el)return;
+  /* L3: if the on-chain openTime never loaded, say the countdown is
+     unavailable instead of silently counting to the hardcoded default. */
+  if(DEPLOYED&&!OPEN_TS_OK){el.textContent=T().cd_unavail;const bcU=document.getElementById('bannerCount');if(bcU)bcU.textContent=el.textContent;return;}
   const now=Math.floor(Date.now()/1000),diff=OPEN_TS-now;
-  if(diff<=0){el.textContent=T().cd_opened;const bc0=document.getElementById('bannerCount');if(bc0)bc0.textContent=el.textContent;return;}
+  if(diff<=0){el.textContent=T().cd_opened;const bc0=document.getElementById('bannerCount');if(bc0)bc0.textContent=el.textContent;
+    /* L1: crossing zero re-renders my panel, so a connected user who stays
+       on the page sees the reveal box appear without a manual refresh. */
+    if(!OPEN_ANNOUNCED){OPEN_ANNOUNCED=true;if(MY.seq>0)renderMyPanel();}
+    return;}
+  OPEN_ANNOUNCED=false;
   const d=Math.floor(diff/86400),h=Math.floor(diff%86400/3600),m=Math.floor(diff%3600/60),s=diff%60;
   el.textContent=T().cd_days(d,String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'));
   const bc=document.getElementById('bannerCount');if(bc)bc.textContent=el.textContent;
@@ -268,7 +293,9 @@ async function connectWallet(){
 }
 async function doSeal(){
   if(!DEPLOYED){setStatus(T().st_notdeployed_op);return;}
-  if(!SIGNER||!MY.name){setStatus(T().st_connect);return;}
+  if(!SIGNER){setStatus(T().st_connect);return;}
+  /* L2: wallet connected but holds no Agent ID — say that, not "connect first". */
+  if(!MY.name){setStatus(T().st_no_id);return;}
   if(MY.seq>0){setStatus(T().st_dup_seal);return;}
   const text=document.getElementById('msgInput').value.trim();
   if(!text){setStatus(T().st_msg_empty);return;}
