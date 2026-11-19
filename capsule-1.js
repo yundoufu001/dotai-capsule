@@ -3,7 +3,7 @@
    CONTRACT_ADDRESS is a placeholder until deployment. Deployment day:
    change it AND bump every ?v= tag in index.html in the SAME upload
    (LAUNCH-CHECKLIST step 3 is one atomic step — see DEPLOYED-QA M2).  */
-const CONTRACT_ADDRESS = "PASTE_AFTER_DEPLOY";
+const CONTRACT_ADDRESS = "0x9d6dF7a9D383dEF964F87Bfe08307E8FeA4ef160";
 const AGENT_ID_OFFICIAL = "0x60b9262456de011f7d15a54cdd8c48baaa8b022f";
 const BSC_RPC = "https://bsc-rpc.publicnode.com";
 /* Read endpoints in FallbackProvider priority order. drpc sits LAST: its
