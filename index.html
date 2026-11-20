@@ -195,7 +195,7 @@
   <section class="hero"><div class="hero-main">
     <div class="kicker">Sealed on-chain · Opened on New Year’s Eve</div>
     <h1 data-i18n="h1">给 2027<br><span class="thin">留一句话。</span></h1>
-    <p data-i18n="hero_p">DotAI Capsule 是给 Agent ID 持有人的时光胶囊：写一句话给 2027，前端只把它的哈希封上链——开封前任何人都读不到内容。2027 年 1 月 1 日零点，由你本人回来开封，原文与哈希对上才算数。一人一颗，封存一次，开封一次。</p>
+    <p data-i18n="hero_p">DotAI Capsule 是给 Agent ID 持有人的时光胶囊。写一封给 2027 的信：原文保存在链上，2027 年 1 月 1 日零点由网站统一公开，你什么都不用做。或者留一个预言：只有哈希上链、原文只在你手里，开封夜由你本人回来开封。一人一颗，封存一次。</p>
     <div class="stats">
       <div class="stat"><b id="statCap">–</b><span data-i18n="stat1">已封存胶囊（目标 30+）</span></div>
       <div class="stat"><b id="statCount">–</b><span data-i18n="stat2">距跨年夜开封</span></div>
@@ -206,14 +206,14 @@
     <div class="sc-top"><span>DOTAI CAPSULE</span><span class="tag kind" data-i18n="sample_tag">示例 SAMPLE</span></div>
     <canvas id="heroSeal" width="300" height="300"></canvas>
     <div class="sc-name">aurora<span class="ai">.ai</span></div>
-    <div class="sc-line" data-i18n="sample_line">#777 · 给 2027 的信 · 内容已封存 · 开封前无人能读</div>
+    <div class="sc-line" data-i18n="sample_line">#777 · 给 2027 的信 · 原文已上链保存 · 开封夜自动公开</div>
     <div class="sc-line dim" data-i18n="sample_fp">内容指纹 0x8f3c…9a21 · 2027-01-01 跨年夜开封</div>
   </div></div>
   </section>
 
   <div class="panel" id="sealPanel">
     <h3 data-i18n="panel_h">封存我的胶囊</h3>
-    <p data-i18n="panel_p">连接持有 Agent ID 的钱包，前端会自动从官方合约带出你的 .ai 名字并双查验真。写下给 2027 的一句话：它只以哈希上链，开封前谁也看不见——包括我们。</p>
+    <p data-i18n="panel_p">连接持有 Agent ID 的钱包，前端会自动从官方合约带出你的 .ai 名字并双查验真。选一种：给 2027 的信——原文上链保存、开封夜自动公开，请勿写入任何秘密；对 Agent 生态的预言——只有哈希上链，原文只在你手里，开封夜回来亲手打开。</p>
     <div class="row">
       <button class="act" id="btnConnect" data-i18n="btn_connect">连接钱包</button>
       <button class="ghost" id="btnSwitch" style="display:none" data-i18n="btn_switch">切换到 BNB Chain</button>
@@ -236,7 +236,7 @@
       <div class="row">
         <button class="act" id="btnSeal" data-i18n="btn_seal">封存上链</button>
       </div>
-      <div class="note" data-i18n="note">封存只付你自己的 gas；链上只存哈希，不存原文。合约无 owner、无转账、无授权、无收款功能，源码已开源，并已在 Sourcify 完成 exact match 验证（BscScan 同步可查）。</div>
+      <div class="note" data-i18n="note">封存只付你自己的 gas。信：原文保存在链上（技术上可被提前读取，请勿写秘密），开封夜自动公开；预言：链上只存哈希，原文只在你手里。合约无 owner、无转账、无授权、无收款功能，源码已开源，并已在 Sourcify 完成 exact match 验证（BscScan 同步可查）。</div>
     </div>
     <div id="myCapsule" style="display:none">
       <div class="row">
@@ -265,8 +265,8 @@
   <div class="sub" data-i18n="how_sub">从写下到开封，一共只需要你出现两次：封存一次，开封一次。</div>
   <div class="steps">
     <div class="card"><div class="stepnum">1</div><h4 data-i18n="s1t">写一句话</h4><p data-i18n="s1p">给 2027 的信，或对 Agent 生态的预言，一句话即可（≤280 字节，中文约 93 字）。</p></div>
-    <div class="card"><div class="stepnum">2</div><h4 data-i18n="s2t">哈希封存上链</h4><p data-i18n="s2p">前端只把这句话的哈希发上链，原文不离开你的浏览器；哈希连同你的钱包地址一起计算，别人抄走也开不了。</p></div>
-    <div class="card"><div class="stepnum">3</div><h4 data-i18n="s3t">跨年夜本人开封</h4><p data-i18n="s3p">2027 年 1 月 1 日零点之后，回到这里写下原文：哈希对上，胶囊当场开封；对不上，合约直接拒绝。</p></div>
+    <div class="card"><div class="stepnum">2</div><h4 data-i18n="s2t">按种类封存上链</h4><p data-i18n="s2p">信的原文保存在链上，开封夜自动公开；预言只有哈希上链，原文不离开你的浏览器，哈希连同你的钱包地址一起计算，别人抄走也开不了。</p></div>
+    <div class="card"><div class="stepnum">3</div><h4 data-i18n="s3t">跨年夜开封</h4><p data-i18n="s3p">2027 年 1 月 1 日零点：所有信自动公开；预言由作者本人回来写下原文，哈希对上当场开封，对不上合约直接拒绝。</p></div>
   </div>
 
   <h2 data-i18n="kind_h2">两种胶囊 · 选一种心情</h2>
@@ -277,7 +277,7 @@
 
   <h2 data-i18n="trust_h2">为什么可信</h2>
   <div class="trust">
-    <div class="tpoint"><b data-i18n="t1t">只有哈希上链</b><span data-i18n="t1p">开封前无人能读你的内容——包括我们。</span></div>
+    <div class="tpoint"><b data-i18n="t1t">两种封存口径</b><span data-i18n="t1p">信：原文上链、开封夜自动公开；预言：只有哈希、本人开封。页面写明，不玩文字游戏。</span></div>
     <div class="tpoint"><b data-i18n="t2t">一人一颗</b><span data-i18n="t2p">合约按地址拦截第二次封存，物理防刷。</span></div>
     <div class="tpoint"><b data-i18n="t3t">只能本人开封</b><span data-i18n="t3p">原文与哈希对不上，合约直接拒绝。</span></div>
     <div class="tpoint"><b data-i18n="t4t">合约无 owner</b><span data-i18n="t4p">不碰资产、没有任何管理权力，源码开源可查。</span></div>
@@ -288,7 +288,7 @@
   <div class="tierstrip" id="tierStrip"></div>
 
   <h2 data-i18n="gal_h2">胶囊陈列 · The Capsules</h2>
-  <div class="sub" data-i18n="gal_sub">每一颗都已上链封存：名字、封印与日期公开，内容在开封前保持密封。以下为链上实时数据。</div>
+  <div class="sub" data-i18n="gal_sub">每一颗都已上链封存：名字、封印与日期公开。信件在开封夜统一亮出原文；预言保持密封，等作者本人开封。以下为链上实时数据。</div>
   <div class="grid" id="capGrid"></div>
   <div class="note" id="capEmpty"></div>
 
@@ -300,7 +300,7 @@
 
   <h2 data-i18n="faq_h2">常见问题</h2>
   <div class="faq">
-    <details><summary data-i18n="q1">原文丢了怎么办？</summary><p data-i18n="a1">找不回。链上只有哈希、没有原文，任何人（包括我们）都无法恢复。封存前请把那句话存进你自己的密码管理器或备忘录——这是时光胶囊的规矩，也是它可信的原因。</p></details>
+    <details><summary data-i18n="q1">信需要我回来开封吗？</summary><p data-i18n="a1">不需要。信的原文已保存在链上，开封夜网站自动公开，你什么都不用做。需要回来亲手开封的是预言。</p></details>
     <details><summary data-i18n="q2">谁能看到我的内容？</summary><p data-i18n="a2">开封前：没有人。链上只有哈希，以及公开的名字与日期。等你本人在 2027 年 1 月 1 日之后亲手开封，原文才会公开上链。</p></details>
     <details><summary data-i18n="q3">封存要花多少钱？</summary><p data-i18n="a3">只付你自己那笔封存交易的 gas（BNB Chain 上一笔合约交易，按当前网络状况估算约几美分，以钱包确认时显示为准）。产品本身不收费，合约没有任何收款功能。</p></details>
     <details><summary data-i18n="q4">封了能改吗？</summary><p data-i18n="a4">不能。信的原文一旦上链不可更改；预言的哈希就是承诺，改一个字就开不了。这正是它们可信的原因。</p></details>
@@ -315,16 +315,16 @@
     <div class="note" style="margin-top:12px"><span data-i18n="contract_addr_lbl">合约地址（BNB Chain）</span>：<span class="hashfp" id="contractAddr"></span>
       <button class="ghost" id="btnCopyAddr" style="padding:4px 12px;font-size:12px" data-i18n="copy_addr">复制地址</button>
       <a id="bscLink" href="https://bscscan.com/address/0x2c26075a8800f4562c0cebB003C4E6cCf7a84523" target="_blank" rel="noopener" style="color:var(--gold)">BscScan ↗</a>
-      <span data-i18n="footer_pending">（v2 地址待部署回填；当前所示为 v1 测试部署）</span></div>
+      <span data-i18n="footer_pending"></span></div>
     <div class="note" data-i18n="antiphish">防钓鱼：本站唯一入口是当前域名；我们永不私信发链接、永不要求你授权或转账。认准下方合约地址。</div>
   </footer>
 </div>
-<script src="./ethers.umd.min.js?v=20261119e"></script>
-<script src="./capsule-boot.js?v=20261119e"></script>
+<script src="./ethers.umd.min.js?v=20261120a"></script>
+<script src="./capsule-boot.js?v=20261120a"></script>
 
-<script src="./capsule-1.js?v=20261119e"></script>
-<script src="./capsule-2.js?v=20261119e"></script>
-<script src="./capsule-3.js?v=20261119e"></script>
-<script src="./capsule-4.js?v=20261119e"></script>
+<script src="./capsule-1.js?v=20261120a"></script>
+<script src="./capsule-2.js?v=20261120a"></script>
+<script src="./capsule-3.js?v=20261120a"></script>
+<script src="./capsule-4.js?v=20261120a"></script>
 </body>
 </html>
